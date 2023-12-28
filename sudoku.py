@@ -16,11 +16,33 @@ class Game(ABC, Generic[T]):
     def find_adjacent_nodes(self, node: Union[T, None]) -> List[T]:
         pass
 
-def is_unique(values: ROW) -> bool:
-    non_zero_values = [x for x in values if x != 0]
-    unique_non_zero_values = set(non_zero_values)
-    return len(non_zero_values) == len(unique_non_zero_values)
+REGISTER_VALUES = {
+    1: 0b1,
+    2: 0b10,
+    3: 0b100,
+    4: 0b1000,
+    5: 0b10000,
+    6: 0b100000,
+    7: 0b1000000,
+    8: 0b10000000,
+    9: 0b100000000,
+}
 
+def is_unique(values: ROW) -> bool:
+    registers = 0
+
+    for value in values:
+        if value == 0:
+            continue
+
+        rv = REGISTER_VALUES[value]
+
+        if rv & registers:
+            return False
+        
+        registers |= rv
+
+    return True
 class Sudoku(Game):
     def __init__(self, lines: ROWS):
         self.lines = lines
@@ -156,13 +178,20 @@ def read_puzzles():
 
     return puzzles
 
+def format_lines(data):
+    result = []
+
+    for d in data:
+        result.append(''.join([str(x) for x in d]))
+
+    return result
+
 def solve(game: Sudoku):
     walk = Walk(game, search_type='dfs')
 
     while walk.current_node is None or not walk.current_node.is_complete():
-        # if walk.current_node:
-        #     print('\n-----------\n')
-        #     print('\n'.join(walk.current_node.lines))
+        print('\n-----------\n')
+        print('\n'.join(format_lines(walk.current_node.lines)))
         # else:
         #     print('gug')
         walk.advance()
@@ -173,22 +202,17 @@ def solve(game: Sudoku):
 if __name__ == '__main__':
     puzzles = read_puzzles()
 
-    def format_lines(data):
-        result = []
-
-        for d in data:
-            result.append(''.join([str(x) for x in d]))
-
-        return result
-
     with open('solutions.txt', 'w') as fh:
-        for key, lines in puzzles.items():
-            fh.write(f'\nPuzzle {key}\n')
-            fh.write('\n'.join(format_lines(lines)) + '\n\n')
+        def debug(message):
+            print(message)
+            fh.write(f'{message}\n')
             fh.flush()
+
+        for key, lines in puzzles.items():
+            debug(f'\nPuzzle {key}\n')
+            debug('\n'.join(format_lines(lines)) + '\n\n')
             game = Sudoku(lines)
             solution = solve(game)
-            fh.write('Solution:\n')
-            fh.write('\n'.join(format_lines(solution.lines)) + '\n')
-            fh.flush()
+            debug('Solution:\n')
+            debug('\n'.join(format_lines(solution.lines)) + '\n')
             break
