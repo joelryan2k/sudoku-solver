@@ -1,9 +1,11 @@
 from abc import ABC, abstractmethod
-from typing import Union, Literal, List, TypeVar, Generic, Set
+from typing import Union, Literal, List, TypeVar, Generic, Set, Tuple
 
 SEARCH_TYPE = Union[Literal['dfs'], Literal['bfs']]
 
 T = TypeVar("T")
+ROW = Tuple[int, ...]
+ROWS = Tuple[ROW, ...]
 
 class Game(ABC, Generic[T]):
     @abstractmethod
@@ -14,23 +16,23 @@ class Game(ABC, Generic[T]):
     def find_adjacent_nodes(self, node: Union[T, None]) -> List[T]:
         pass
 
-def is_unique(values: str) -> bool:
-    non_zero_values = [x for x in values if x != '0']
+def is_unique(values: ROW) -> bool:
+    non_zero_values = [x for x in values if x != 0]
     unique_non_zero_values = set(non_zero_values)
     return len(non_zero_values) == len(unique_non_zero_values)
 
 class Sudoku(Game):
-    def __init__(self, lines: List[str]):
+    def __init__(self, lines: ROWS):
         self.lines = lines
 
     def is_complete(self) -> bool:
-        incomplete_lines = [line for line in self.lines if '0' in line]
+        incomplete_lines = [line for line in self.lines if 0 in line]
         return len(incomplete_lines) == 0
     
     def find_next_zero(self):
         for y, line in enumerate(self.lines):
-            if '0' in line:
-                return line.index('0'), y
+            if 0 in line:
+                return line.index(0), y
 
     def find_adjacent_nodes(self, node: Union["Sudoku", None] = None) -> List["Sudoku"]:
         next_zero = self.find_next_zero()
@@ -53,11 +55,12 @@ class Sudoku(Game):
 
 
     def clone(self):
-        return Sudoku(lines=[line for line in self.lines])
+        return Sudoku(lines=self.lines)
     
-    def set(self, x, y, value):
+    def set(self, x: int, y: int, value: int):
         line = self.lines[y]
-        self.lines[y] = line[:x] + str(value) + line[x + 1:]
+        new_line = tuple(line[:x] + tuple([value]) + line[x + 1:]) # type: ignore
+        self.lines = tuple(self.lines[:y] + tuple([new_line]) + self.lines[y + 1:]) # type: ignore
 
     def is_valid(self):
         # test rows
@@ -67,18 +70,17 @@ class Sudoku(Game):
 
         # test columns
         for x in range(9):
-            values = ''.join([line[x] for line in self.lines])
+            values = [line[x] for line in self.lines]
             if not is_unique(values):
                 return False
 
         # test blocks
         for x_block in range(2):
             for y_block in range(2):
-                values_list = []
+                values = []
                 for x in range(2):
                     for y in range(2):
-                        values_list.append(self.lines[y_block * 3 + y][x_block * 3 + x])
-                        values = ''.join(values_list)
+                        values.append(self.lines[y_block * 3 + y][x_block * 3 + x])
                         if not is_unique(values):
                             return False
                         
@@ -91,7 +93,7 @@ class Sudoku(Game):
         return self.lines == other.lines
     
     def __hash__(self):
-        return hash(''.join(self.lines))
+        return hash(self.lines)
 
 class Walk:
     def __init__(self, current_node: T, search_type: SEARCH_TYPE='dfs'):
@@ -124,13 +126,20 @@ class Walk:
 
         return changes
 
+def lines_to_internal(lines: List[str]) -> ROWS:
+    data: List[ROW] = []
+    for line in lines:
+        d = tuple([int(x) for x in line])
+        data.append(d) # type: ignore
+    return tuple(data) # type: ignore
+
 def read_puzzles():
     buffer = []
     puzzle_name = None
     puzzles = {}
 
     def on_puzzle_complete():
-        puzzles[puzzle_name] = buffer
+        puzzles[puzzle_name] = lines_to_internal(buffer)
 
     with open('sudoku.txt', 'r') as fh:
         for line in fh.readlines():
@@ -164,14 +173,22 @@ def solve(game: Sudoku):
 if __name__ == '__main__':
     puzzles = read_puzzles()
 
+    def format_lines(data):
+        result = []
+
+        for d in data:
+            result.append(''.join([str(x) for x in d]))
+
+        return result
+
     with open('solutions.txt', 'w') as fh:
         for key, lines in puzzles.items():
             fh.write(f'\nPuzzle {key}\n')
-            fh.write('\n'.join(lines) + '\n\n')
+            fh.write('\n'.join(format_lines(lines)) + '\n\n')
             fh.flush()
             game = Sudoku(lines)
             solution = solve(game)
             fh.write('Solution:\n')
-            fh.write('\n'.join(solution.lines) + '\n')
+            fh.write('\n'.join(format_lines(solution.lines)) + '\n')
             fh.flush()
             break
