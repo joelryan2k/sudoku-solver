@@ -191,9 +191,9 @@ def solve(game: Sudoku):
     walk = Walk(game, search_type='dfs')
 
     while walk.current_node is None or not walk.current_node.is_complete():
-        print(f'visited {len(walk.visited)} nodes')
-        # print('\n-----------\n')
-        # print('\n'.join(format_lines(walk.current_node.lines)))
+        # print(f'visited {len(walk.visited)} nodes')
+        print('\n-----------\n')
+        print('\n'.join(format_lines(walk.current_node.lines)))
         # else:
         #     print('gug')
         walk.advance()
