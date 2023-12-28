@@ -19,16 +19,45 @@ def is_unique(values: str) -> bool:
     unique_non_zero_values = set(non_zero_values)
     return len(non_zero_values) == len(unique_non_zero_values)
 
-class SudokuNode:
+class Sudoku(Game):
     def __init__(self, lines: List[str]):
         self.lines = lines
 
+    def is_complete(self) -> bool:
+        incomplete_lines = [line for line in self.lines if '0' in line]
+        return len(incomplete_lines) == 0
+    
+    def find_next_zero(self):
+        for y, line in enumerate(self.lines):
+            if '0' in line:
+                return line.index('0'), y
+
+    def find_adjacent_nodes(self, node: Union["Sudoku", None] = None) -> List["Sudoku"]:
+        next_zero = self.find_next_zero()
+
+        if not next_zero:
+            return []
+        
+        x, y = next_zero
+
+        possible_adjacent_nodes: List["Sudoku"] = []
+
+        for possible_digit in range(1, 10):
+            possible_adjacent_node = self.clone()
+            possible_adjacent_node.set(x, y, possible_digit)
+
+            if possible_adjacent_node.is_valid():
+                possible_adjacent_nodes.append(possible_adjacent_node)
+
+        return possible_adjacent_nodes
+
+
     def clone(self):
-        return SudokuNode(lines=[line for line in self.lines])
+        return Sudoku(lines=[line for line in self.lines])
     
     def set(self, x, y, value):
         line = self.lines[y]
-        self.lines[y] = line[:y] + str(value) + line[y + 1:]
+        self.lines[y] = line[:x] + str(value) + line[x + 1:]
 
     def is_valid(self):
         # test rows
@@ -55,41 +84,17 @@ class SudokuNode:
                         
         return True
 
-class Sudoku(Game[SudokuNode]):
-    def __init__(self, initial_state: SudokuNode):
-        self.state = initial_state
+    def __eq__(self, other): 
+        if not isinstance(other, Sudoku):
+            return NotImplemented
 
-    def is_complete(self) -> bool:
-        incomplete_lines = [line for line in self.state.lines if '0' in line]
-        return len(incomplete_lines) == 0
+        return self.lines == other.lines
     
-    def find_next_zero(self):
-        for y, line in enumerate(self.state.lines):
-            if '0' in line:
-                return line.index('0'), y
+    def __hash__(self):
+        return hash(''.join(self.lines))
 
-    def find_adjacent_nodes(self, node: Union[SudokuNode, None] = None) -> List[SudokuNode]:
-        next_zero = self.find_next_zero()
-
-        if not next_zero:
-            return []
-        
-        x, y = next_zero
-
-        possible_adjacent_nodes: List[SudokuNode] = []
-
-        for possible_digit in range(1, 10):
-            possible_adjacent_node = self.state.clone()
-            possible_adjacent_node.set(x, y, possible_digit)
-
-            if possible_adjacent_node.is_valid():
-                possible_adjacent_nodes.append(possible_adjacent_node)
-
-        return possible_adjacent_nodes
-
-class Walk(Generic[T]):
-    def __init__(self, game: Game, current_node: Union[T, None] = None, search_type: SEARCH_TYPE='dfs'):
-        self.game = game
+class Walk:
+    def __init__(self, current_node: T, search_type: SEARCH_TYPE='dfs'):
         self.current_node = current_node
         self.frontier: List[T] = []
         self.visited: Set[T] = set()
@@ -98,7 +103,7 @@ class Walk(Generic[T]):
     def advance(self):
         changes = []
 
-        unvisited_adjacent_nodes = [node for node in self.game.find_adjacent_nodes(self.current_node) if node not in self.visited]
+        unvisited_adjacent_nodes = [node for node in self.current_node.find_adjacent_nodes(self.current_node) if node not in self.visited]
         self.frontier.extend(unvisited_adjacent_nodes)
 
         if self.current_node:
@@ -145,14 +150,28 @@ def read_puzzles():
 def solve(game: Sudoku):
     walk = Walk(game, search_type='dfs')
 
-    while not game.is_complete():
-        print('\n-----------\n')
-        print('\n'.join(game.state.lines))
+    while walk.current_node is None or not walk.current_node.is_complete():
+        # if walk.current_node:
+        #     print('\n-----------\n')
+        #     print('\n'.join(walk.current_node.lines))
+        # else:
+        #     print('gug')
         walk.advance()
 
     print('solved')
+    return walk.current_node
 
 if __name__ == '__main__':
     puzzles = read_puzzles()
-    game = Sudoku(SudokuNode(puzzles['01']))
-    solve(game)
+
+    with open('solutions.txt', 'w') as fh:
+        for key, lines in puzzles.items():
+            fh.write(f'\nPuzzle {key}\n')
+            fh.write('\n'.join(lines) + '\n\n')
+            fh.flush()
+            game = Sudoku(lines)
+            solution = solve(game)
+            fh.write('Solution:\n')
+            fh.write('\n'.join(solution.lines) + '\n')
+            fh.flush()
+            break

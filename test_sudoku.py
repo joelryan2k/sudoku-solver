@@ -1,4 +1,4 @@
-from sudoku import Sudoku, SudokuNode, is_unique
+from sudoku import Sudoku, is_unique
 
 def test_is_unique_returns_true_if_unique():
     values = '003020600'
@@ -9,7 +9,7 @@ def test_is_unique_returns_false_if_not_unique():
     assert not is_unique(values)
 
 def test_is_valid_returns_true_if_valid():
-    node = SudokuNode(lines=[
+    node = Sudoku(lines=[
         '003020600',
         '900305001',
         '001806400',
@@ -23,7 +23,7 @@ def test_is_valid_returns_true_if_valid():
     assert node.is_valid()
 
 def test_is_valid_returns_false_if_non_unique_row():
-    node = SudokuNode(lines=[
+    node = Sudoku(lines=[
         '303020600',
         '900305001',
         '001806400',
@@ -37,7 +37,7 @@ def test_is_valid_returns_false_if_non_unique_row():
     assert not node.is_valid()
 
 def test_is_valid_returns_false_if_non_unique_column():
-    node = SudokuNode(lines=[
+    node = Sudoku(lines=[
         '803020600',
         '900305001',
         '001806400',
@@ -51,7 +51,7 @@ def test_is_valid_returns_false_if_non_unique_column():
     assert not node.is_valid()
 
 def test_is_valid_returns_false_if_non_unique_block():
-    node = SudokuNode(lines=[
+    node = Sudoku(lines=[
         '903020600',
         '900305001',
         '001806400',
@@ -65,7 +65,7 @@ def test_is_valid_returns_false_if_non_unique_block():
     assert not node.is_valid()
 
 def test_find_adjacent_nodes():
-    game = Sudoku(SudokuNode(lines=[
+    game = Sudoku(lines=[
         '003020600',
         '900305001',
         '001806400',
@@ -75,7 +75,7 @@ def test_find_adjacent_nodes():
         '002609500',
         '800203009',
         '005010300',
-    ]))
+    ])
 
     nodes = game.find_adjacent_nodes()
     assert len(nodes) == 3
