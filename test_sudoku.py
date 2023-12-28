@@ -84,3 +84,29 @@ def test_find_adjacent_nodes():
     assert 1 in first_values_of_adjacent_nodes
     assert 4 in first_values_of_adjacent_nodes
     assert 5 in first_values_of_adjacent_nodes
+
+def test_game_equality_and_hash():
+    game1 = Sudoku(lines=lines_to_internal([
+        '003020600',
+        '900305001',
+        '001806400',
+        '008102900',
+        '700000008',
+        '006708200',
+        '002609500',
+        '800203009',
+        '005010300',
+    ]))
+    game2 = Sudoku(lines=lines_to_internal([
+        '003020600',
+        '900305001',
+        '001806400',
+        '008102900',
+        '700000008',
+        '006708200',
+        '002609500',
+        '800203009',
+        '005010300',
+    ]))
+    assert game1 == game2
+    assert hash(game1) == hash(game2)

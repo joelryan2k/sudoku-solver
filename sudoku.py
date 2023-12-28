@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Union, Literal, List, TypeVar, Generic, Set, Tuple
+import time
 
 SEARCH_TYPE = Union[Literal['dfs'], Literal['bfs']]
 
@@ -190,8 +191,9 @@ def solve(game: Sudoku):
     walk = Walk(game, search_type='dfs')
 
     while walk.current_node is None or not walk.current_node.is_complete():
-        print('\n-----------\n')
-        print('\n'.join(format_lines(walk.current_node.lines)))
+        print(f'visited {len(walk.visited)} nodes')
+        # print('\n-----------\n')
+        # print('\n'.join(format_lines(walk.current_node.lines)))
         # else:
         #     print('gug')
         walk.advance()
@@ -209,10 +211,13 @@ if __name__ == '__main__':
             fh.flush()
 
         for key, lines in puzzles.items():
+            start_time = time.time()
             debug(f'\nPuzzle {key}\n')
             debug('\n'.join(format_lines(lines)) + '\n\n')
             game = Sudoku(lines)
             solution = solve(game)
-            debug('Solution:\n')
+            end_time = time.time()
+            elapsed_seconds = int(end_time - start_time)
+            debug(f'Solution in {elapsed_seconds} seconds:\n')
             debug('\n'.join(format_lines(solution.lines)) + '\n')
-            break
+            # break
