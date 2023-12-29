@@ -84,6 +84,7 @@ class Sudoku(Game):
         return len(incomplete_lines) == 0
     
     def find_next_zero(self):
+        "Find the group with the least zeros and pick the next zero in that group"
         group_with_least_zeros = None
         values_with_least_zeros = None
 
