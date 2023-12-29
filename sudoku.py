@@ -44,6 +44,37 @@ def is_unique(values: ROW) -> bool:
         registers |= rv
 
     return True
+
+def generate_group_coords():
+    result = []
+
+    # rows and columns
+    for y in range(9):
+        row = []
+        column = []
+
+        for x in range(9):
+            row.append((x, y))
+            column.append((y, x))
+
+        result.append(row)
+        result.append(column)
+
+    # blocks
+    for x_block in range(3):
+        for y_block in range(3):
+            block = []
+
+            for x in range(3):
+                for y in range(3):
+                    block.append((y_block * 3 + y, x_block * 3 + x))
+
+            result.append(block)
+
+    return result
+
+SUDOKU_GROUP_COORDS = generate_group_coords()
+
 class Sudoku(Game):
     def __init__(self, lines: ROWS):
         self.lines = lines
@@ -53,9 +84,27 @@ class Sudoku(Game):
         return len(incomplete_lines) == 0
     
     def find_next_zero(self):
-        for y, line in enumerate(self.lines):
-            if 0 in line:
-                return line.index(0), y
+        group_with_least_zeros = None
+        values_with_least_zeros = None
+
+        max_non_zero_count = 0
+
+        for coords in SUDOKU_GROUP_COORDS:
+            values = [self.lines[y][x] for x, y in coords]
+            count_of_values_with_non_zero = len([x for x in values if x != 0])
+            zero_count = len([x for x in values if x == 0])
+
+            if zero_count and count_of_values_with_non_zero > max_non_zero_count:
+                group_with_least_zeros = coords
+                values_with_least_zeros = values
+                max_non_zero_count = count_of_values_with_non_zero
+
+        if not group_with_least_zeros or not values_with_least_zeros:
+            raise Exception('couldn\'t find the group')
+
+        next_zero_value_index = values_with_least_zeros.index(0)
+        coord_with_next_zero = group_with_least_zeros[next_zero_value_index]
+        return coord_with_next_zero
 
     def find_adjacent_nodes(self, node: Union["Sudoku", None] = None) -> List["Sudoku"]:
         next_zero = self.find_next_zero()
@@ -86,27 +135,11 @@ class Sudoku(Game):
         self.lines = tuple(self.lines[:y] + tuple([new_line]) + self.lines[y + 1:]) # type: ignore
 
     def is_valid(self):
-        # test rows
-        for values in self.lines:
+        for coords in SUDOKU_GROUP_COORDS:
+            values = [self.lines[y][x] for x, y in coords]
             if not is_unique(values):
                 return False
 
-        # test columns
-        for x in range(9):
-            values = [line[x] for line in self.lines]
-            if not is_unique(values):
-                return False
-
-        # test blocks
-        for x_block in range(2):
-            for y_block in range(2):
-                values = []
-                for x in range(2):
-                    for y in range(2):
-                        values.append(self.lines[y_block * 3 + y][x_block * 3 + x])
-                        if not is_unique(values):
-                            return False
-                        
         return True
 
     def __eq__(self, other): 
