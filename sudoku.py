@@ -156,17 +156,15 @@ class Walk:
     def __init__(self, current_node: T, search_type: SEARCH_TYPE='dfs'):
         self.current_node = current_node
         self.frontier: List[T] = []
-        self.visited: Set[T] = set()
         self.search_type = search_type
 
     def advance(self):
         changes = []
 
-        unvisited_adjacent_nodes = [node for node in self.current_node.find_adjacent_nodes(self.current_node) if node not in self.visited]
+        unvisited_adjacent_nodes = [node for node in self.current_node.find_adjacent_nodes(self.current_node)]
         self.frontier.extend(unvisited_adjacent_nodes)
 
         if self.current_node:
-            self.visited.add(self.current_node)
             changes.append(self.current_node)
 
         if self.search_type == 'bfs':
